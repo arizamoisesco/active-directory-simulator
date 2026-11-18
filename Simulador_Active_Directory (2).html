@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Active Directory - Usuarios y equipos | Simulador</title>
+<style>
+:root{--blue:#0078d4;--line:#c8c8c8;--panel:#f3f3f3;--text:#202020;--muted:#666;--select:#cce8ff}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font:13px "Segoe UI",Tahoma,Arial,sans-serif;color:var(--text);background:#e9e9e9}
+.app{height:100vh;min-height:650px;display:flex;flex-direction:column;background:#fff}
+.titlebar{height:34px;background:#f7f7f7;display:flex;align-items:center;padding:0 12px;gap:9px;border-bottom:1px solid #ddd}
+.appicon{width:18px;height:18px;background:#e7f1fb;border:1px solid #8aaac8;display:grid;place-items:center;color:#145a91;font-weight:bold}
+.window-actions{margin-left:auto;display:flex;gap:22px;color:#555;font-size:15px}
+.menubar{height:30px;display:flex;align-items:center;padding:0 12px;gap:22px;border-bottom:1px solid #ddd}
+.menubar span:first-letter{text-decoration:underline}
+.toolbar{height:38px;border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 10px;gap:7px;background:#fafafa}
+.tool{border:1px solid transparent;background:transparent;padding:5px 8px;cursor:pointer;border-radius:3px;color:#333}
+.tool:hover{background:#e7f2fb;border-color:#b6d7ef}.tool:disabled{opacity:.4;cursor:default}
+.tabs{display:flex;gap:2px;padding:5px 10px 0;background:#f0f0f0;border-bottom:1px solid #bbb}
+.tab{padding:6px 18px;border:1px solid #bbb;border-bottom:0;background:#e4e4e4;cursor:pointer;color:#333;font:13px "Segoe UI"}
+.tab:hover{background:#eef6fc}.tab.on{background:#fff;position:relative;top:1px;font-weight:600}
+.address{height:30px;border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 12px;gap:9px;color:#444}
+.address input{border:1px solid #bbb;padding:4px 7px;flex:1;background:#fff}
+.body{display:flex;flex:1;min-height:0}.views{flex:1;min-width:0;display:flex}
+.main{display:flex;flex:1;min-height:0;min-width:0}
+.sidebar{width:290px;min-width:230px;border-right:1px solid #bbb;overflow:auto;padding:10px 7px;background:#fff}
+.pane{flex:1;min-width:0;display:flex;flex-direction:column}
+.pane-head{height:35px;background:#f6f6f6;border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 12px;font-weight:600}
+.pane-tools{height:32px;border-bottom:1px solid #ddd;display:flex;align-items:center;padding:0 10px;gap:16px;color:#555}
+.tablewrap{overflow:auto;flex:1}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:400;color:#444;background:#fafafa;border-bottom:1px solid #ccc;padding:7px 9px;position:sticky;top:0}
+td{padding:6px 9px;border-bottom:1px solid #eee;white-space:nowrap}
+tr.item{cursor:pointer}tr.item:hover{background:#f1f8fd}tr.item.selected{background:var(--select);outline:1px solid #99c9ed}
+.tree{list-style:none;margin:0;padding:0}.tree ul{list-style:none;padding-left:20px;margin:2px 0}
+.tree li{margin:2px 0;white-space:nowrap}
+.node{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:2px;cursor:pointer}
+.node:hover{background:#f0f6fb}.node.active{background:var(--select);outline:1px solid #a7cdeb}
+.node.dis{color:#888}
+.twisty{width:12px;color:#555;font-size:10px}.ico{width:17px;height:17px;display:inline-grid;place-items:center;font-size:14px;flex:none}
+.status{height:24px;border-top:1px solid #ccc;background:#f7f7f7;padding:4px 10px;color:#555;display:flex;justify-content:space-between}
+.footer{padding:7px 12px;background:#fafafa;border-top:1px solid #ddd;color:#666;font-size:11px}
+.context{position:fixed;z-index:5;background:#fff;border:1px solid #aaa;box-shadow:0 3px 12px #0003;min-width:210px;padding:4px;display:none}
+.context button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:7px 12px;cursor:pointer;font:13px "Segoe UI"}
+.context button:hover{background:#e5f2fb}
+.modalback{position:fixed;inset:0;background:#0005;display:none;align-items:center;justify-content:center;z-index:10}
+#msgback{z-index:20}
+.modal{background:#fff;width:min(460px,calc(100vw - 30px));box-shadow:0 8px 30px #0004;border:1px solid #888}
+.modalhead{padding:12px 16px;background:#f4f4f4;border-bottom:1px solid #ccc;font-weight:600}
+.modalbody{padding:16px;display:grid;gap:10px;max-height:70vh;overflow:auto}.modalbody label{display:grid;gap:4px}.modalbody input,.modalbody select{padding:7px;border:1px solid #999;font:13px "Segoe UI"}
+.modalfoot{padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #ddd}
+.kv td{white-space:normal;padding:4px 6px;vertical-align:top}.kv td:first-child{color:#555;width:38%}
+button.primary{background:#0067b8;color:#fff;border:1px solid #005a9e;padding:6px 18px;cursor:pointer}
+button.secondary{background:#f7f7f7;border:1px solid #aaa;padding:6px 18px;cursor:pointer}
+.notice{margin:10px;padding:10px;background:#fff8df;border:1px solid #e4cd79;line-height:1.45}
+.empty{padding:24px;color:#777}
+.badge{font-size:11px;padding:1px 6px;border:1px solid;margin-left:6px}.b-lock{color:#a4262c;border-color:#e3a4a8;background:#fdf3f4}.b-dis{color:#555;border-color:#bbb;background:#f0f0f0}
+.msgico{font-size:30px;width:44px;flex:none;text-align:center}.msgico.error{color:#c42b1c}.msgico.warn{color:#c79100}.msgico.info{color:#0067b8}
+.msgrow{display:flex;gap:10px;align-items:flex-start;line-height:1.5}.msgrow ul{margin:6px 0 0;padding-left:18px}
+.gpotbl td:first-child{width:34px;text-align:center}.inh{color:#777;font-style:italic}
+.loginwrap{flex:1;padding:14px;display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:12px;overflow:auto;align-content:start}
+.card{border:1px solid #bbb;background:#fff;min-width:0}.card.wide{grid-column:1/-1}
+.cardhead{padding:7px 12px;background:#f4f4f4;border-bottom:1px solid #ccc;font-weight:600}.cardbody{padding:12px;display:grid;gap:9px;line-height:1.5}
+.cardbody label{display:grid;gap:4px}.cardbody input,.cardbody select{padding:7px;border:1px solid #999;font:13px "Segoe UI"}
+.hint{font-size:11px;color:#666}.uo{padding:10px;border:1px solid}.uo.bad{background:#fdf3f4;border-color:#e3a4a8}.uo.good{background:#f1faf1;border-color:#8cc58c}
+.mono{font-family:Consolas,monospace;font-size:12px}.cardbody ul{margin:2px 0 6px;padding-left:20px}.cardbody table td,.cardbody table th{padding:4px 8px}
+.mpanel{width:330px;border-left:1px solid #bbb;background:#fafafa;display:flex;flex-direction:column;min-height:0}
+.mhead{padding:8px 12px;background:#f4f4f4;border-bottom:1px solid #ccc;font-weight:600;display:flex;justify-content:space-between}
+.mbody{overflow:auto;flex:1;padding:8px}.mbody h4{margin:8px 0 6px;font-size:12px;color:#444}
+.mi{border:1px solid #ddd;background:#fff;margin-bottom:6px;padding:7px 8px;line-height:1.4}.mi.done{border-color:#7fba7f;background:#f2faf2}
+.chk{display:inline-grid;width:16px;height:16px;border:1px solid #888;place-items:center;font-size:11px;margin-right:6px;background:#fff;vertical-align:-3px}.done .chk{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.mdesc{font-size:11.5px;color:#555;margin-top:3px}.notelink{font-size:11.5px;color:#0067b8;cursor:pointer;display:block;margin-top:4px}
+.mi textarea{width:100%;min-height:60px;margin-top:4px;font:12px "Segoe UI";padding:5px;border:1px solid #aaa}
+.mfoot{padding:8px;border-top:1px solid #ddd;display:flex;gap:6px;flex-wrap:wrap}.mfoot button{padding:5px 10px;font-size:12px}
+.mbody details{font-size:12px;margin-top:8px}.mbody details td,.mbody details th{border:1px solid #ddd;padding:3px 5px;white-space:normal;font-size:11px}
+#toast{position:fixed;right:18px;bottom:40px;background:#2e7d32;color:#fff;padding:9px 14px;box-shadow:0 3px 12px #0004;display:none;z-index:30}
+@media(max-width:900px){.mpanel{position:fixed;right:0;top:34px;bottom:24px;z-index:8;box-shadow:-4px 0 14px #0003}.loginwrap{grid-template-columns:1fr}}
+@media(max-width:650px){.sidebar{width:42%;min-width:145px}.menubar{gap:12px}.toolbar .tool span{display:none}.address{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="titlebar"><div class="appicon">AD</div><span>Usuarios y equipos de Active Directory</span><div class="window-actions"><span>—</span><span>□</span><span>×</span></div></div>
+ <div class="menubar"><span>Archivo</span><span>Acción</span><span>Ver</span><span>Ayuda</span></div>
+ <div class="toolbar">
+  <button class="tool" onclick="goUp()">⬆ <span>Arriba</span></button><button class="tool" onclick="refresh()">↻ <span>Actualizar</span></button><span style="color:#bbb">│</span>
+  <span id="aducTools" style="display:contents"><button class="tool" onclick="openCreate('user')">👤 <span>Nuevo usuario</span></button><button class="tool" onclick="openCreate('ou')">📁 <span>Nueva OU</span></button>
+  <button class="tool" onclick="openCreate('group')">👥 <span>Nuevo grupo</span></button><span style="color:#bbb">│</span></span>
+  <button class="tool" onclick="showHelp()">ⓘ <span>Acerca del simulador</span></button>
+  <button class="tool" style="margin-left:auto" onclick="togglePanel()">📋 <span>Misiones</span></button>
+ </div>
+ <div class="tabs" id="tabs">
+  <button class="tab on" data-t="aduc" onclick="setTab('aduc')">Usuarios y equipos</button>
+  <button class="tab" data-t="gpo" onclick="setTab('gpo')">Directivas (GPO)</button>
+  <button class="tab" data-t="login" onclick="setTab('login')">Iniciar sesión</button>
+ </div>
+ <div class="address">📍 <span>Ruta:</span><input id="path" readonly value=""></div>
+ <div class="body">
+  <div class="views">
+   <div class="main" id="v-aduc">
+    <aside class="sidebar"><ul class="tree" id="tree"></ul></aside>
+    <section class="pane">
+     <div class="pane-head" id="heading">tecnoandina.local</div>
+     <div class="pane-tools"><span>Nombre</span><span>Tipo</span><span>Descripción</span></div>
+     <div class="tablewrap"><table><thead><tr><th style="width:35%">Nombre</th><th style="width:20%">Tipo</th><th>Descripción</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+   </div>
+   <div class="main" id="v-gpo" hidden>
+    <aside class="sidebar" id="g_locs"></aside>
+    <section class="pane"><div class="pane-head" id="g_head"></div><div class="tablewrap" id="g_body"></div></section>
+   </div>
+   <div class="main" id="v-login" hidden>
+    <div class="loginwrap">
+     <div class="card"><div class="cardhead">🔐 Inicio de sesión en el dominio TECNOANDINA</div><div class="cardbody">
+      <label>Equipo<select id="l_pc"></select></label>
+      <label>Nombre de usuario<input id="l_user" autocomplete="off" placeholder="ej. carlos"></label>
+      <label>Contraseña<input id="l_pass" type="password" autocomplete="off"></label>
+      <button class="primary" onclick="doLogin()">Iniciar sesión</button>
+      <div class="hint">Cuentas de práctica: ana / Ana2026! · luis / Luis2026!. Las cuentas nuevas usan la contraseña que definiste al crearlas o restablecerlas.</div>
+     </div></div>
+     <div class="card"><div class="cardhead">👤 Lo que ve el usuario</div><div class="cardbody" id="l_user_out"><span class="hint">Aún no se ha intentado iniciar sesión.</span></div></div>
+     <div class="card wide"><div class="cardhead">🛡 Diagnóstico del administrador (Visor de eventos › Seguridad)</div><div class="cardbody" id="l_admin_out"><span class="hint">Aquí aparecerá el detalle técnico del último intento.</span></div></div>
+     <div class="card wide" id="l_gp" hidden><div class="cardhead">📋 Resultado de directivas (equivalente a gpresult)</div><div class="cardbody" id="l_gp_out"></div></div>
+     <div class="card wide"><div class="cardhead">Registro de eventos de seguridad</div><div style="overflow:auto"><table><thead><tr><th>Hora</th><th>Id.</th><th>Usuario</th><th>Equipo</th><th>Resultado</th></tr></thead><tbody id="l_events"><tr><td colspan="5" class="empty">Sin eventos.</td></tr></tbody></table></div></div>
+    </div>
+   </div>
+  </div>
+  <aside class="mpanel" id="mpanel"></aside>
+ </div>
+ <div class="status"><span id="statusleft">Listo</span><span id="statusright">Objetos: 0</span></div>
+ <div class="footer">Simulador educativo independiente · Interfaz inspirada en la consola MMC de Windows Server · No modifica un dominio real</div>
+</div>
+<div class="context" id="context"></div>
+<div class="modalback" id="modalback"><div class="modal"><div class="modalhead" id="modaltitle"></div><form id="form"><div class="modalbody" id="modalbody"></div><div class="modalfoot"><button type="button" class="secondary" id="cancelbtn" onclick="closeModal()">Cancelar</button><button class="primary" id="okbtn" type="submit">Aceptar</button></div></form></div></div>
+<div class="modalback" id="msgback"><div class="modal"><div class="modalhead" id="msgtitle"></div><div class="modalbody"><div class="msgrow"><div class="msgico" id="msgico"></div><div id="msgtext"></div></div></div><div class="modalfoot"><button class="primary" onclick="$('msgback').style.display='none'">Aceptar</button></div></div></div>
+<div id="toast"></div>
+<script>
+const GPOS=[
+ {id:'fondo',name:'Fondo corporativo',target:'user',desc:'Establece el fondo de escritorio corporativo'},
+ {id:'usb',name:'Bloquear USB',target:'user',desc:'Impide el uso de unidades de almacenamiento USB'},
+ {id:'lock',name:'Bloqueo de pantalla (5 min)',target:'computer',desc:'Bloquea la sesión tras 5 minutos de inactividad'}];
+const state={
+ domain:'tecnoandina.local',selected:'domain',selectedObject:null,treeSel:'domain',exp:new Set(['domain']),gpoSel:'domain',tab:'aduc',
+ objects:[
+ {id:'ou-ventas',name:'Ventas',type:'OU',parent:'domain',desc:'Unidad organizativa del área de ventas'},
+ {id:'ou-ti',name:'TI',type:'OU',parent:'domain',desc:'Unidad organizativa de tecnología'},
+ {id:'ou-dc',name:'Domain Controllers',type:'OU',parent:'domain',desc:'Unidad organizativa predeterminada de controladores de dominio'},
+ {id:'container-builtin',name:'Builtin',type:'Contenedor',parent:'domain',desc:'Contenedor predeterminado de cuentas integradas'},
+ {id:'container-users',name:'Users',type:'Contenedor',parent:'domain',desc:'Contenedor predeterminado de usuarios'},
+ {id:'container-computers',name:'Computers',type:'Contenedor',parent:'domain',desc:'Contenedor predeterminado de equipos'},
+ {id:'ana',name:'ana',type:'Usuario',parent:'ou-ventas',desc:'Ana Pérez'},
+ {id:'luis',name:'luis',type:'Usuario',parent:'ou-ti',desc:'Luis Gómez'},
+ {id:'dc01',name:'DC01',type:'Equipo',parent:'ou-dc',desc:'Controlador de dominio'},
+ {id:'pcv1',name:'PC-VENTAS-01',type:'Equipo',parent:'ou-ventas',desc:'Estación de trabajo'},
+ {id:'pcti1',name:'PC-TI-01',type:'Equipo',parent:'ou-ti',desc:'Estación de trabajo'},
+ {id:'pcnuevo',name:'PC-NUEVO',type:'Equipo',parent:'container-computers',desc:'Equipo recién unido al dominio'},
+ {id:'gv',name:'G_Ventas',type:'Grupo',parent:'ou-ventas',desc:'Grupo de seguridad'},
+ {id:'gti',name:'G_TI',type:'Grupo',parent:'ou-ti',desc:'Grupo de seguridad'}
+ ],
+ users:{ana:{password:'Ana2026!',enabled:true,locked:false,attempts:0},luis:{password:'Luis2026!',enabled:true,locked:false,attempts:0}},
+ groups:{G_Ventas:['ana'],G_TI:['luis']},
+ links:{fondo:[],usb:[],lock:[]},
+ flags:{},done:{},notes:{},open:new Set(),events:[],panel:innerWidth>900
+};
+const $=id=>document.getElementById(id);
+const obj=id=>state.objects.find(x=>x.id===id);
+const children=id=>state.objects.filter(x=>x.parent===id);
+const isCont=o=>o&&(o.type==='OU'||o.type==='Contenedor');
+const icon=t=>({Dominio:'🌐',OU:'📁',Contenedor:'📂',Usuario:'👤',Equipo:'🖥️',Grupo:'👥'})[t]||'📄';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const locName=l=>l==='domain'?state.domain:(obj(l)?.name||'?');
+const objectPath=id=>{let a=[],o=obj(id);while(o){a.unshift(o.name);o=obj(o.parent)}return state.domain+'\\'+a.join('\\')};
+const say=t=>$('statusleft').textContent=t;
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',3200)}
+function msg(title,html,kind='error'){$('msgtitle').textContent=title;$('msgico').className='msgico '+kind;$('msgico').textContent={error:'✖',warn:'⚠',info:'ℹ'}[kind];$('msgtext').innerHTML=html;$('msgback').style.display='flex'}
+let modalOk=null;
+function openModal(title,body,ok,o={}){$('modaltitle').textContent=title;$('modalbody').innerHTML=body;modalOk=ok;$('cancelbtn').style.display=o.noCancel?'none':'';$('modalback').style.display='flex';const f=$('modalbody').querySelector('input,select');if(f)f.focus()}
+function closeModal(){$('modalback').style.display='none'}
+$('form').onsubmit=e=>{e.preventDefault();if(!modalOk||modalOk()!==false)closeModal()};
+
+/* ---- Directivas: herencia por ubicación ---- */
+function chainOf(id){const a=[];let p=obj(id)?.parent;while(p){a.push(p);if(p==='domain')break;p=obj(p)?.parent||'domain'}return a}
+function applied(objId,target){const ch=chainOf(objId);return GPOS.filter(g=>g.target===target).map(g=>{const loc=ch.find(l=>state.links[g.id].includes(l));return loc?{g,loc}:null}).filter(Boolean)}
+const names=l=>l.length?l.map(x=>x.g.name).join(', '):'Ninguna';
+function pwCheck(p){const e=[];if(p.length<8)e.push('La longitud mínima es de 8 caracteres.');
+ if([/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(p)).length<3)e.push('Debe combinar al menos 3 de 4 tipos: mayúsculas, minúsculas, números y símbolos.');return e}
+function pwError(name,errs){msg('Usuarios y equipos de Active Directory',`Windows no puede completar la operación para <b>${esc(name)}</b> porque:<br><br>La contraseña no cumple los requisitos de la directiva de contraseñas del dominio. Compruebe la longitud mínima, la complejidad y los requisitos del historial.<ul>${errs.map(x=>'<li>'+x+'</li>').join('')}</ul>`)}
+
+/* ---- Pestaña Usuarios y equipos ---- */
+function nodeLi(id,label,ic){
+ const li=document.createElement('li'),kids=children(id),open=state.exp.has(id);
+ li.innerHTML=`<div class="node ${state.treeSel===id?'active':''}" data-id="${id}"><span class="twisty" data-tw="1">${kids.length?(open?'▼':'▶'):''}</span><span class="ico">${ic}</span>${esc(label)}</div>`;
+ if(kids.length&&open){const ul=document.createElement('ul');kids.forEach(k=>ul.append(nodeLi(k.id,k.name,icon(k.type))));li.append(ul)}
+ return li}
+function stateBadges(o){if(o.type!=='Usuario')return'';const u=state.users[o.name];return u?(u.locked?'<span class="badge b-lock">🔒 Bloqueada</span>':'')+(u.enabled?'':'<span class="badge b-dis">⬇ Deshabilitada</span>'):''}
+function render(){
+ const tree=$('tree');tree.innerHTML='';tree.append(nodeLi('domain',state.domain,'🌐'));
+ $('heading').textContent=state.selected==='domain'?state.domain:(obj(state.selected)?.name||state.domain);
+ const list=children(state.selected);
+ $('rows').innerHTML=list.length?list.map(o=>`<tr class="item ${o.id===state.selectedObject?'selected':''}" data-id="${o.id}"><td>${icon(o.type)} &nbsp;${esc(o.name)}</td><td>${o.type}</td><td>${esc(o.desc||'')}${stateBadges(o)}</td></tr>`).join(''):`<tr><td colspan="3" class="empty">Esta ubicación no contiene objetos.</td></tr>`;
+ $('statusright').textContent='Objetos: '+list.length;
+ if(state.tab==='aduc')$('path').value='Consola raíz \\ Usuarios y equipos de Active Directory \\ '+(state.selected==='domain'?state.domain:objectPath(state.selected));
+}
+$('tree').onclick=e=>{const n=e.target.closest('.node');if(!n)return;const id=n.dataset.id;
+ if(e.target.dataset.tw&&children(id).length){state.exp.has(id)?state.exp.delete(id):state.exp.add(id);render()}else select(id)};
+$('tree').oncontextmenu=e=>{const n=e.target.closest('.node');if(!n)return;e.preventDefault();contextMenu(e.clientX,e.clientY,n.dataset.id)};
+$('rows').onclick=e=>{const r=e.target.closest('tr.item');if(!r)return;state.selectedObject=r.dataset.id;document.querySelectorAll('tr.item').forEach(x=>x.classList.toggle('selected',x===r));say('Seleccionado: '+obj(r.dataset.id).name)};
+$('rows').ondblclick=e=>{const r=e.target.closest('tr.item');if(!r)return;const o=obj(r.dataset.id);isCont(o)?select(o.id):showDetails(o.id)};
+$('rows').oncontextmenu=e=>{const r=e.target.closest('tr.item');if(!r)return;e.preventDefault();state.selectedObject=r.dataset.id;contextMenu(e.clientX,e.clientY,r.dataset.id)};
+function select(id){const o=obj(id);state.treeSel=id;
+ if(o&&!isCont(o)){state.selected=o.parent;state.selectedObject=id}else{state.selected=id;state.selectedObject=null;state.exp.add(id)}
+ let p=state.selected;while(p){state.exp.add(p);p=p==='domain'?null:obj(p)?.parent}render()}
+function contextMenu(x,y,id){
+ const o=id==='domain'?{name:state.domain,type:'Dominio'}:obj(id);if(!o)return;
+ const c=$('context'),A=[];
+ if(o.type==='Dominio'||isCont(o)){A.push(['Nuevo usuario',()=>openCreate('user',id)],['Nuevo grupo',()=>openCreate('group',id)],['Nueva unidad organizativa',()=>openCreate('ou',id)]);if(o.type==='OU')A.push(['Eliminar',()=>deleteObject(id)]);A.push(['Actualizar',refresh])}
+ else{A.push(['Propiedades',()=>showDetails(id)]);
+  if(o.type==='Usuario'){const u=state.users[o.name];A.push(['Restablecer contraseña…',()=>resetPwd(o.name)]);if(u.locked)A.push(['Desbloquear cuenta',()=>unlock(o.name)]);A.push([u.enabled?'Deshabilitar cuenta':'Habilitar cuenta',()=>toggleEnabled(o.name)],['Agregar a un grupo…',()=>addToGroup(o.name)])}
+  if(o.type==='Grupo')A.push(['Agregar miembro…',()=>addMember(o.name)]);
+  A.push(['Mover…',()=>moveObject(id)],['Eliminar',()=>deleteObject(id)])}
+ c.innerHTML=A.map((a,i)=>`<button>${a[0]}</button>`).join('');c.style.display='block';c.style.left=Math.min(x,innerWidth-230)+'px';c.style.top=Math.min(y,innerHeight-A.length*32-12)+'px';
+ c.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{c.style.display='none';A[i][1]()})}
+document.addEventListener('click',e=>{if(!$('context').contains(e.target))$('context').style.display='none'});
+function afterChange(){render();renderGpo();renderLogin();tick()}
+
+function openCreate(type,parent=state.selected){
+ const pt=parent==='domain'?'Dominio':obj(parent)?.type;
+ if(!['OU','Contenedor','Dominio'].includes(pt)){msg('Usuarios y equipos de Active Directory','Selecciona primero una OU o un contenedor.','warn');return}
+ const labels={user:'Nuevo objeto: Usuario',ou:'Nuevo objeto: Unidad organizativa',group:'Nuevo objeto: Grupo'};
+ let f=`<label>Nombre ${type==='user'?'de inicio de sesión':''}<input id="f_name" autocomplete="off" placeholder="${type==='user'?'ej. maria':type==='group'?'ej. G_Ventas':'Nombre'}"></label>`;
+ if(type==='user')f+=`<label>Nombre completo<input id="f_full" placeholder="Nombre y apellido"></label><label>Contraseña inicial<input id="f_pass" type="password" autocomplete="new-password"></label><label><input id="f_enabled" type="checkbox" checked style="width:auto"> La cuenta está habilitada</label>`;
+ if(type==='group')f+=`<label>Miembro inicial (opcional)<select id="f_member"><option value="">Ninguno</option>${Object.keys(state.users).map(n=>`<option>${esc(n)}</option>`).join('')}</select></label>`;
+ openModal(labels[type],f+`<div style="color:#666;font-size:11px">Se creará dentro de: ${esc(locName(parent))}</div>`,()=>{
+  const name=$('f_name').value.trim();if(!name)return false;
+  if(state.objects.some(o=>o.name.toLowerCase()===name.toLowerCase()&&(o.parent===parent||(type==='user'&&o.type==='Usuario')))){msg('Active Directory Domain Services','Ya existe un objeto con el nombre <b>'+esc(name)+'</b> en esta ubicación o en el dominio.');return false}
+  let desc='';
+  if(type==='user'){const p=$('f_pass').value,er=pwCheck(p);if(er.length){pwError(name,er);return false}
+   state.users[name]={password:p,enabled:$('f_enabled').checked,locked:false,attempts:0};desc=$('f_full').value||'Cuenta de usuario'}
+  if(type==='group'){const m=$('f_member').value;state.groups[name]=m?[m]:[];desc='Grupo de seguridad'}
+  if(type==='ou')desc='Unidad organizativa';
+  state.objects.push({id:'obj-'+Date.now(),name,type:{user:'Usuario',ou:'OU',group:'Grupo'}[type],parent,desc});state.exp.add(parent);say('Creado: '+name);afterChange()})}
+function showDetails(id){
+ const o=obj(id);if(!o)return;const r=(a,b)=>`<tr><td>${a}</td><td>${b}</td></tr>`;let h=r('Tipo',o.type)+r('Ubicación',esc(objectPath(id)))+r('Descripción',esc(o.desc||'—'));
+ if(o.type==='Usuario'){const u=state.users[o.name];h+=r('Inicio de sesión',esc(o.name)+'@'+state.domain)+r('Cuenta habilitada',u.enabled?'Sí':'No')+r('Cuenta bloqueada',u.locked?'Sí':'No')+r('Intentos fallidos',u.attempts)+r('Miembro de',Object.keys(state.groups).filter(g=>state.groups[g].includes(o.name)).join(', ')||'Ninguno')+r('Directivas de usuario aplicables',esc(names(applied(id,'user'))))}
+ if(o.type==='Equipo')h+=r('Directivas de equipo aplicables',esc(names(applied(id,'computer'))));
+ if(o.type==='Grupo')h+=r('Miembros',esc((state.groups[o.name]||[]).join(', '))||'Sin miembros');
+ if(o.type==='OU')h+=r('GPO vinculadas',esc(GPOS.filter(g=>state.links[g.id].includes(id)).map(g=>g.name).join(', ')||'Ninguna'));
+ openModal('Propiedades de '+o.name,`<table class="kv">${h}</table>`,null,{noCancel:true})}
+function moveObject(id){
+ const o=obj(id);if(!o)return;const t=[{id:'domain',name:state.domain}].concat(state.objects.filter(x=>isCont(x)&&x.id!==o.parent)).filter(x=>x.id!==o.parent);
+ openModal('Mover objeto',`<label>Mover «${esc(o.name)}» a:<select id="f_dest">${t.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></label>`,()=>{o.parent=$('f_dest').value;state.exp.add(o.parent);say('Movido '+o.name+' a '+locName(o.parent));afterChange()},{})}
+function deleteObject(id){
+ const o=obj(id);if(!o||!confirm('¿Eliminar '+o.name+'? Esta acción solo afecta al simulador.'))return;
+ const rm=[id];for(let i=0;i<rm.length;i++)children(rm[i]).forEach(x=>rm.push(x.id));
+ rm.map(obj).forEach(x=>{if(x.type==='Usuario'){delete state.users[x.name];Object.keys(state.groups).forEach(g=>state.groups[g]=state.groups[g].filter(m=>m!==x.name))}if(x.type==='Grupo')delete state.groups[x.name]});
+ Object.keys(state.links).forEach(g=>state.links[g]=state.links[g].filter(l=>!rm.includes(l)));
+ state.objects=state.objects.filter(x=>!rm.includes(x.id));
+ if(rm.includes(state.selected)||!obj(state.selected)&&state.selected!=='domain')state.selected='domain';
+ if(!obj(state.treeSel))state.treeSel=state.selected;if(!obj(state.gpoSel))state.gpoSel='domain';state.selectedObject=null;say('Eliminado: '+o.name);afterChange()}
+function goUp(){if(state.selected!=='domain')select(obj(state.selected)?.parent||'domain')}
+function refresh(){afterChange();say('Vista actualizada')}
+
+/* ---- Acciones de administrador ---- */
+function resetPwd(n){openModal('Restablecer contraseña: '+n,`<label>Nueva contraseña<input id="f_np" type="password" autocomplete="new-password"></label><label><input id="f_unl" type="checkbox" style="width:auto"> Desbloquear la cuenta de usuario</label>`,()=>{
+ const p=$('f_np').value,er=pwCheck(p);if(er.length){pwError(n,er);return false}
+ const u=state.users[n];u.password=p;if($('f_unl').checked&&u.locked){u.locked=false;u.attempts=0;if(state.flags.locked)state.flags.unlocked=true}
+ state.flags['reset_'+n]=true;toast('Contraseña de '+n+' restablecida');afterChange()})}
+function unlock(n){const u=state.users[n];u.locked=false;u.attempts=0;if(state.flags.locked)state.flags.unlocked=true;toast('Cuenta '+n+' desbloqueada');afterChange()}
+function toggleEnabled(n){const u=state.users[n];u.enabled=!u.enabled;toast('Cuenta '+n+(u.enabled?' habilitada':' deshabilitada'));afterChange()}
+function addToGroup(n){const g=Object.keys(state.groups).filter(x=>!state.groups[x].includes(n));
+ if(!g.length){msg('Usuarios y equipos de Active Directory','No hay grupos disponibles. Crea primero un grupo.','info');return}
+ openModal('Agregar a un grupo',`<label>Agregar «${esc(n)}» al grupo:<select id="f_g">${g.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>`,()=>{state.groups[$('f_g').value].push(n);toast(n+' agregado a '+$('f_g').value);afterChange()})}
+function addMember(g){const u=Object.keys(state.users).filter(x=>!state.groups[g].includes(x));
+ if(!u.length){msg('Usuarios y equipos de Active Directory','No hay más usuarios para agregar.','info');return}
+ openModal('Agregar miembro a '+g,`<label>Usuario:<select id="f_u">${u.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>`,()=>{state.groups[g].push($('f_u').value);toast($('f_u').value+' agregado a '+g);afterChange()})}
+
+/* ---- Pestaña Directivas (GPO) ---- */
+function locList(id='domain',d=0,out=[]){children(id).filter(isCont).forEach(o=>{out.push({id:o.id,d:d+1});locList(o.id,d+1,out)});return out}
+function renderGpo(){
+ if(!obj(state.gpoSel)&&state.gpoSel!=='domain')state.gpoSel='domain';
+ const L=[{id:'domain',d:0}].concat(locList());
+ $('g_locs').innerHTML=L.map(l=>{const o=obj(l.id),ct=o&&o.type==='Contenedor';return`<div class="node ${state.gpoSel===l.id?'active':''}" data-id="${l.id}" style="margin-left:${l.d*18}px"><span class="ico">${l.id==='domain'?'🌐':icon(o.type)}</span>${esc(locName(l.id))}</div>`}).join('');
+ document.querySelectorAll('#g_locs .node').forEach(n=>n.onclick=()=>{state.gpoSel=n.dataset.id;renderGpo()});
+ const loc=state.gpoSel,o=obj(loc),ct=o&&o.type==='Contenedor';
+ $('g_head').textContent='Directivas vinculadas a: '+locName(loc);
+ const inh=GPOS.map(g=>({g,from:chainOf(loc).find(l=>state.links[g.id].includes(l))})).filter(x=>x.from&&!state.links[x.g.id].includes(loc));
+ $('g_body').innerHTML=(ct?'<div class="notice">⚠ Este contenedor predeterminado no es una unidad organizativa: <b>no admite vínculos de GPO</b>.</div>':'<div class="notice">Marca una directiva para vincularla a la ubicación seleccionada.</div>')+
+ `<table class="gpotbl"><thead><tr><th></th><th>Objeto de directiva (GPO)</th><th>Configuración de</th><th>Descripción</th></tr></thead><tbody>`+GPOS.map(g=>`<tr><td><input type="checkbox" ${state.links[g.id].includes(loc)?'checked':''} ${ct?'disabled':''} onchange="toggleLink('${g.id}',this.checked)"></td><td>📜 ${esc(g.name)}</td><td>${g.target==='user'?'Usuario':'Equipo'}</td><td>${esc(g.desc)}</td></tr>`).join('')+`</tbody></table>`+
+ (inh.length?`<div class="notice" style="background:#f3f8fd;border-color:#a9c8e4">Directivas heredadas de ubicaciones superiores (solo lectura):<ul>${inh.map(x=>`<li class="inh">${esc(x.g.name)} — vinculada a ${esc(locName(x.from))}</li>`).join('')}</ul></div>`:'');
+ if(state.tab==='gpo')$('path').value='Consola raíz \\ Administración de directivas de grupo \\ '+locName(loc);
+ $('statusright').textContent=state.tab==='gpo'?'Vínculos en esta ubicación: '+GPOS.filter(g=>state.links[g.id].includes(loc)).length:$('statusright').textContent}
+function toggleLink(gid,on){const a=state.links[gid],l=state.gpoSel,g=GPOS.find(x=>x.id===gid);
+ if(on&&!a.includes(l))a.push(l);if(!on)state.links[gid]=a.filter(x=>x!==l);say((on?'GPO vinculada: ':'Vínculo quitado: ')+g.name+' → '+locName(l));afterChange()}
+
+/* ---- Pestaña Iniciar sesión ---- */
+function renderLogin(){const s=$('l_pc'),v=s.value;s.innerHTML=state.objects.filter(o=>o.type==='Equipo'&&o.id!=='dc01').map(o=>`<option>${esc(o.name)}</option>`).join('');if(v)s.value=v;
+ $('l_events').innerHTML=state.events.length?state.events.slice(0,8).map(e=>`<tr><td>${e.t}</td><td>${e.id}</td><td>${esc(e.user||'—')}</td><td>${esc(e.pc)}</td><td>${esc(e.res)}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Sin eventos.</td></tr>'}
+$('l_pass').onkeydown=$('l_user').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+function doLogin(){
+ const name=$('l_user').value.trim(),pass=$('l_pass').value,pcN=$('l_pc').value;
+ const key=Object.keys(state.users).find(k=>k.toLowerCase()===name.toLowerCase()),u=state.users[key];
+ const generic='El nombre de usuario o la contraseña no son correctos. Inténtalo de nuevo.',cant='No se puede iniciar sesión con esta cuenta en este momento. Si el problema continúa, comunícate con el administrador del sistema.';
+ let id=4625,res,adm,um=generic,ok=false;
+ if(!name||!pass){msg('Inicio de sesión','Escribe el nombre de usuario y la contraseña.','warn');return}
+ if(!u){res='Usuario inexistente';adm=`<b>Estado 0xC0000064</b> — El nombre de usuario «${esc(name)}» no existe en el dominio.<br><b>Acción:</b> verificar la ortografía o crear la cuenta.`}
+ else if(u.locked){res='Cuenta bloqueada';um=cant;adm=`<b>Estado 0xC0000234</b> — La cuenta «${esc(key)}» está <b>bloqueada</b> por la directiva de bloqueo. Aunque la contraseña sea correcta, no se permite el acceso.<br><b>Acción:</b> clic derecho sobre la cuenta › <i>Desbloquear cuenta</i> (o restablecer la contraseña marcando «Desbloquear»).`}
+ else if(!u.enabled){res='Cuenta deshabilitada';um=cant;if(key==='luis')state.flags.r2=true;adm=`<b>Estado 0xC0000072</b> — La cuenta «${esc(key)}» está <b>deshabilitada</b>.<br><b>Acción:</b> habilitarla solo si la persona debe volver a tener acceso.`}
+ else if(u.password!==pass){u.attempts++;res='Contraseña incorrecta ('+u.attempts+'/3)';adm=`<b>Estado 0xC000006A</b> — Contraseña incorrecta para «${esc(key)}». Intentos fallidos: <b>${u.attempts} de 3</b>.`;
+  if(u.attempts>=3){u.locked=true;state.flags.locked=true;adm+=`<br><b>Evento 4740:</b> la cuenta fue <b>bloqueada</b> tras 3 intentos fallidos. Acción: desbloquearla desde Usuarios y equipos.`;state.events.unshift({t:new Date().toLocaleTimeString('es-CO'),id:4740,user:key,pc:pcN,res:'Cuenta bloqueada'});toast('🔒 La cuenta '+key+' se bloqueó')}}
+ else ok=true;
+ const ev={t:new Date().toLocaleTimeString('es-CO'),id:ok?4624:4625,user:key||name,pc:pcN,res:ok?'Inicio de sesión correcto':res};
+ if(ok){u.attempts=0;const uo=state.objects.find(o=>o.type==='Usuario'&&o.name===key),co=state.objects.find(o=>o.type==='Equipo'&&o.name===pcN);
+  const au=applied(uo.id,'user'),ac=applied(co.id,'computer');
+  const has=x=>au.some(a=>a.g.id===x);
+  if(key==='carlos'&&has('usb'))state.flags.m5=true;
+  if(key==='ana'){if(has('fondo'))state.flags.r1a=true;else if(state.flags.r1a)state.flags.r1b=true}
+  if(key==='pablo'&&state.flags.reset_pablo)state.flags.r3login=true;
+  um=`<b>Bienvenido, ${esc(key)}.</b><br>Sesión iniciada en ${esc(pcN)}.`;
+  adm=`<b>Evento 4624</b> — Inicio de sesión correcto de «${esc(key)}» en ${esc(pcN)}.`;
+  const li=(a,ap)=>ap.length?'<ul>'+ap.map(x=>`<li>✔ ${esc(x.g.name)} <span class="hint">— vinculada a ${esc(locName(x.loc))}</span></li>`).join('')+'</ul>':'<ul><li class="hint">— Ninguna —</li></ul>';
+  const not=GPOS.filter(g=>!(g.target==='user'?au:ac).some(a=>a.g.id===g.id));
+  $('l_gp_out').innerHTML=`<div><b>Ubicación del usuario:</b> <span class="mono">${esc(objectPath(uo.id))}</span><br><b>Ubicación del equipo:</b> <span class="mono">${esc(objectPath(co.id))}</span></div><div><b>Directivas de usuario aplicadas</b>${li(0,au)}<b>Directivas de equipo aplicadas</b>${li(0,ac)}<b>Directivas no aplicadas</b><ul>${not.length?not.map(g=>`<li>✖ ${esc(g.name)} <span class="hint">— sin vínculo en: ${esc(chainOf(g.target==='user'?uo.id:co.id).map(locName).join(' › '))}</span></li>`).join(''):'<li class="hint">— Ninguna —</li>'}</ul></div>`;
+  $('l_gp').hidden=false}
+ else $('l_gp').hidden=true;
+ $('l_user_out').innerHTML=`<div class="uo ${ok?'good':'bad'}">${ok?'✔ ':'⚠ '}${ok?um:esc(um)}</div>`;
+ $('l_admin_out').innerHTML=adm;state.events.unshift(ev);$('l_pass').value='';afterChange()}
+
+/* ---- Misiones y retos ---- */
+const gl=n=>state.objects.find(o=>o.type==='Usuario'&&o.name===n);
+const MIS=[
+ {id:'m1',g:'A',n:'Misión 1',t:'Crear la OU Contabilidad',chk:()=>state.objects.some(o=>o.type==='OU'&&o.name.toLowerCase()==='contabilidad')},
+ {id:'m2',g:'A',n:'Misión 2',t:'Crear el usuario carlos dentro de Contabilidad con una contraseña válida',chk:()=>{const c=gl('carlos');return !!c&&obj(c.parent)?.name==='Contabilidad'}},
+ {id:'m3',g:'A',n:'Misión 3',t:'Crear el grupo G_Contabilidad y agregar a carlos',chk:()=>(state.groups.G_Contabilidad||[]).includes('carlos')},
+ {id:'m4',g:'A',n:'Misión 4',t:'Vincular la GPO Bloquear USB a Contabilidad',chk:()=>state.links.usb.some(l=>obj(l)?.name==='Contabilidad')},
+ {id:'m5',g:'A',n:'Misión 5',t:'Iniciar sesión como carlos y comprobar que se aplica Bloquear USB',chk:()=>!!state.flags.m5},
+ {id:'m6',g:'A',n:'Misión 6',t:'Bloquear una cuenta con 3 contraseñas erróneas y desbloquearla como administrador',chk:()=>!!(state.flags.locked&&state.flags.unlocked)},
+ {id:'r1',g:'B',n:'Reto 1',t:'Ana no recibe el fondo corporativo',d:'Vincula «Fondo corporativo» a Ventas, inicia sesión como ana y comprueba. Luego muévela a TI, vuelve a entrar y explica qué cambió.',chk:()=>!!(state.flags.r1a&&state.flags.r1b)},
+ {id:'r2',g:'B',n:'Reto 2',t:'Luis dejó la empresa',d:'Deshabilita su cuenta, intenta iniciar sesión y compara el mensaje del usuario con el diagnóstico. ¿Por qué deshabilitar y no eliminar de inmediato?',chk:()=>!!state.flags.r2&&!!gl('luis')},
+ {id:'r3',g:'B',n:'Reto 3',t:'Pablo olvidó su clave',d:'Crea a pablo en Ventas, restablece su contraseña a una válida y verifica el acceso.',chk:()=>!!state.flags.r3login&&obj(gl('pablo')?.parent)?.name==='Ventas'},
+ {id:'r4',g:'B',n:'Reto 4',t:'Diseñar el árbol de una empresa (desafío)',d:'Gerencia, Soporte y Ventas con 12 equipos: propone OUs, grupos y GPO. Dibuja el árbol en una hoja y justifica al menos 2 decisiones.',manual:true,chk:()=>!!state.flags.r4}];
+function tick(){MIS.forEach(m=>{if(!state.done[m.id]&&m.chk()){state.done[m.id]=true;toast('✔ '+m.n+' completada')}});renderPanel()}
+function toggleNote(id){state.open.has(id)?state.open.delete(id):state.open.add(id);renderPanel()}
+function renderPanel(){
+ const p=$('mpanel');p.hidden=!state.panel;if(!state.panel)return;
+ const dn=g=>MIS.filter(m=>m.g===g&&state.done[m.id]).length,tot=g=>MIS.filter(m=>m.g===g).length;
+ const item=m=>`<div class="mi ${state.done[m.id]?'done':''}"><div><span class="chk">${state.done[m.id]?'✓':''}</span><b>${m.n}:</b> ${m.t}</div>${m.d?`<div class="mdesc">${m.d}</div>`:''}${m.manual?`<label class="mdesc"><input type="checkbox" ${state.flags.r4?'checked':''} onchange="state.flags.r4=this.checked;tick()"> Árbol dibujado y justificado</label>`:''}<a class="notelink" onclick="toggleNote('${m.id}')">${state.open.has(m.id)?'▾':'▸'} Evidencia: qué hicimos, mensaje y aprendizaje</a>${state.open.has(m.id)?`<textarea oninput="state.notes['${m.id}']=this.value">${esc(state.notes[m.id]||'')}</textarea>`:''}</div>`;
+ const ft=p.querySelector('.mbody');const sc=ft?ft.scrollTop:0;
+ p.innerHTML=`<div class="mhead"><span>📋 Panel de misiones</span><span>${dn('A')+dn('B')}/${MIS.length}</span></div><div class="mbody"><h4>PARTE A · Misiones (${dn('A')}/${tot('A')})</h4>${MIS.filter(m=>m.g==='A').map(item).join('')}<h4>PARTE B · Retos de diagnóstico (${dn('B')}/${tot('B')})</h4>${MIS.filter(m=>m.g==='B').map(item).join('')}
+ <details><summary><b>Rúbrica rápida</b></summary><table><tr><th>Criterio</th><th>Cumple</th><th>Parcial</th><th>No</th></tr><tr><td>Completó las misiones y registró evidencia</td><td>Todas</td><td>Algunas</td><td>Ninguna</td></tr><tr><td>Distingue grupo (permisos) y OU (políticas)</td><td>Correcto</td><td>Con dudas</td><td>No</td></tr><tr><td>Interpreta errores y propone solución</td><td>Claro</td><td>Parcial</td><td>No</td></tr><tr><td>Trabajo en equipo con roles alternados</td><td>Sí</td><td>A veces</td><td>No</td></tr></table></details></div>
+ <div class="mfoot"><button class="secondary" onclick="exportLog()">⬇ Descargar registro</button><button class="secondary" onclick="if(confirm('¿Reiniciar la práctica? Se perderán los cambios y las notas.'))location.reload()">↺ Reiniciar</button></div>`;
+ const nb=p.querySelector('.mbody');if(nb)nb.scrollTop=sc}
+function togglePanel(){state.panel=!state.panel;$('mpanel').hidden=!state.panel;renderPanel()}
+function exportLog(){
+ let t='REGISTRO DE PRÁCTICA — Simulador Active Directory ('+state.domain+')\nFecha: '+new Date().toLocaleString('es-CO')+'\nIntegrantes: ______________________\n\n';
+ MIS.forEach(m=>t+=`[${state.done[m.id]?'X':' '}] ${m.n}: ${m.t}\n    Evidencia: ${state.notes[m.id]||'(sin notas)'}\n\n`);
+ t+='Eventos de inicio de sesión (recientes primero):\n'+(state.events.map(e=>`${e.t} · Id ${e.id} · ${e.user||'-'} · ${e.pc} · ${e.res}`).join('\n')||'(ninguno)');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));a.download='registro_practica_AD.txt';a.click()}
+
+/* ---- Pestañas y ayuda ---- */
+function setTab(t){state.tab=t;
+ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ ['aduc','gpo','login'].forEach(x=>$('v-'+x).hidden=x!==t);
+ $('aducTools').style.display=t==='aduc'?'contents':'none';
+ if(t==='aduc')render();
+ if(t==='gpo')renderGpo();
+ if(t==='login'){renderLogin();$('path').value='Consola raíz \\ Inicio de sesión de dominio \\ '+state.domain;$('statusright').textContent='Eventos: '+state.events.length}}
+function showHelp(){msg('Acerca del simulador','<b>Simulador educativo de Active Directory</b><br><br>• <b>Usuarios y equipos:</b> explora el árbol; clic derecho para crear, mover, restablecer contraseña, desbloquear o deshabilitar.<br>• <b>Directivas (GPO):</b> vincula directivas a OU del dominio.<br>• <b>Iniciar sesión:</b> prueba cuentas y compara lo que ve el usuario con el diagnóstico del administrador.<br>• <b>Misiones:</b> el panel marca los avances automáticamente.<br><br>Los datos se mantienen mientras la página esté abierta. No conecta con Windows Server ni realiza autenticación real.','info')}
+render();renderGpo();renderLogin();setTab('aduc');tick();
+</script>
+</body>
+</html>
